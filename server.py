@@ -69,6 +69,13 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
             return self.print_report()
         return "Invalid command"
 
+    def write_to_file(self):
+        with open(DATABASE_FILE, "w") as f:
+            for i, j in self.database.items():
+                f.write("|".join(j))
+                f.write("\n")
+            f.close()
+
     def find_customer(self, name):
         name = name.lower()
         return '|'.join(self.database.get(name, ["Customer not found"]))
@@ -80,13 +87,14 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
         if not self.is_valid_record(params):
             return "Invalid customer data"
         self.database[name] = params
+        self.write_to_file()
         return "Customer added"
 
     def delete_customer(self, name):
         name = name.lower()
         if name not in self.database:
             return "Customer does not exist"
-        del self.database[name]
+
         return "Customer deleted"
 
     def update_customer(self, name, field, value):
