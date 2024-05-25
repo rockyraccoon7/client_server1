@@ -94,15 +94,22 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
         name = name.lower()
         if name not in self.database:
             return "Customer does not exist"
-
+        del self.database[name]
+        self.write_to_file()
         return "Customer deleted"
 
     def update_customer(self, name, field, value):
         name = name.lower()
+        print(name, field, value)
         if name not in self.database:
             return "Customer not found"
         index = {'age': 1, 'address': 2, 'phone': 3}[field]
+        if field == "age" and (value <= 1 or value >= 120):
+            return "Invalid age. Age should be between 1 and 120. Try again"
+        elif field == "phone" and not ([i.isnumeric() for i in value].count(True) in [7,10] and value[-5] == '-'):
+            return "Invalid phone number. Try again"
         self.database[name][index] = value
+        self.write_to_file()
         return "Customer updated"
 
     def print_report(self):
