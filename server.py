@@ -3,6 +3,8 @@ import os
 
 DATABASE_FILE = 'data.txt'
 
+database = {}
+
 class DatabaseServerHandler(socketserver.BaseRequestHandler):
     def handle(self):
         self.load_database()
@@ -15,40 +17,41 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
             self.request.sendall(response.encode('utf-8'))
 
     def load_database(self):
-        self.database = {}
-        if os.path.exists(DATABASE_FILE):
-            with open(DATABASE_FILE, 'r') as f:
-                for line in f:
-                    record = line.strip().split('|')
-                    if self.is_valid_record(record):
-                        name = record[0].lower()
-                        self.database[name] = record
-                    else:
-                        print(f"Invalid record ignored: {line.strip()}")
+        if not database:
+            if os.path.exists(DATABASE_FILE):
+                with open(DATABASE_FILE, 'r') as f:
+                    for line in f:
+                        record = line.strip().split('|')
+                        if len(record) != 4:
+                            print(f"Record skipped [missing field(s)]: {line}")
+                        elif self.is_valid_record(record, line):
+                            name = record[0].lower()
+                            database[name] = record
+            print("Python DB server is now running...")
 
-    def is_valid_record(self, record):
+    def is_valid_record(self, record, line):
         if not record[0].isalpha():
-            print("Invalid name")
+            print(f"Record skipped [invalid name]: {line}")
             return False
         if len(record) > 1 and record[1]:
             try:
                 age = int(record[1])
                 if age < 1 or age > 120:
-                    print("Invalid age 1")
+                    print(f"Record skipped [invalid age field]: {line}")
                     return False
             except ValueError:
-                print("Invalid age 2")
+                print(f"Record skipped [invalid age field]: {line}")
                 return False
         if len(record) > 2 and record[2]:
             if not all(c.isalnum() or c in " .-" for c in record[2]):
-                print("Invalid address")
+                print(f"Record skipped [invalid address field]: {line}")
                 return False
         if len(record) > 3 and record[3]:
             if not ([i.isnumeric() for i in record[3]].count(True) in [7,10] and record[3][-5] == '-'):
-                print("Invalid phone number")
+                print(f"Record skipped [invalid phone field]: {line}")
                 return False
             if len(record[3]) == 10 and record[3][3] != " ":
-                print("Invalid phone number 2")
+                print(f"Record skipped [invalid phone field]: {line}")
                 return False
         return True
 
@@ -71,49 +74,50 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
 
     def write_to_file(self):
         with open(DATABASE_FILE, "w") as f:
-            for i, j in self.database.items():
+            for i, j in database.items():
                 f.write("|".join(j))
                 f.write("\n")
             f.close()
 
     def find_customer(self, name):
         name = name.lower()
-        return '|'.join(self.database.get(name, ["Customer not found"]))
+        return '|'.join(database.get(name, ["Customer not found"]))
 
     def add_customer(self, params):
         name = params[0].lower()
-        if name in self.database:
+        if name in database:
             return "Customer already exists"
-        if not self.is_valid_record(params):
+        if not self.is_valid_record(params, line="|".join(params)):
             return "Invalid customer data"
-        self.database[name] = params
-        self.write_to_file()
+        database[name] = params
+        #self.write_to_file()
         return "Customer added"
 
     def delete_customer(self, name):
         name = name.lower()
-        if name not in self.database:
+        if name not in database:
             return "Customer does not exist"
-        del self.database[name]
-        self.write_to_file()
+        del database[name]
+        #self.write_to_file()
         return "Customer deleted"
 
     def update_customer(self, name, field, value):
         name = name.lower()
         print(name, field, value)
-        if name not in self.database:
+        if name not in database:
             return "Customer not found"
         index = {'age': 1, 'address': 2, 'phone': 3}[field]
         if field == "age" and (value <= 1 or value >= 120):
             return "Invalid age. Age should be between 1 and 120. Try again"
         elif field == "phone" and not ([i.isnumeric() for i in value].count(True) in [7,10] and value[-5] == '-'):
             return "Invalid phone number. Try again"
-        self.database[name][index] = value
-        self.write_to_file()
+        database[name][index] = value
+        #self.write_to_file()
         return "Customer updated"
 
     def print_report(self):
-        report = "\n".join('|'.join(record) for record in sorted(self.database.values()))
+        print(len(database))
+        report = "\n".join('|'.join(record) for record in sorted(database.values()))
         return report
 
 if __name__ == "__main__":

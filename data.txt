@@ -2,3 +2,23 @@ john|43|123 Apple street|514 428-3452
 katya| 26|49 Queen Mary Road|309 234-7654
 ahmad|91|1888 Pepper Lane|
 gitanshu|42|binoba bhave road|123-1243
+aman| 265|34 avenue street|417 987-0987
+Piyush|24|1436 Rue Mackay| 438 535-0876
+Sameer| 30| |789-0123
+yuvraj|32|26 Saket road| 879 563-8976
+Deepak|25|Topsia Road|912 075-4321
+donald|30|123 Abe Road|7826428
+richie|19| |786-5430
+RYAN|   -25|Rue Bishop|438 987-4231
+Roger|18|Humor Street 156|809 817-0987
+A|75|Drummond Street|789 098-6543
+Tahir| |Wellington Street|756 098-1324
+Welsi|24|Guy Street|-534 079-4156
+Steve|43|14252 Frigger Road|514 736-4156
+Alex|54|53 Laval Road|438 815-9475
+nAKUL|27|Dwarka Road|765-1546
+Rohan|25|432 Mayur Vihar|345 890-5768
+donald|30|123 Abe Road|7826428
+Piyush|26|1436 Rue Mackay| 438 535-0876
+wesley|13|34 avenue street|417 9870987
+fred||
