@@ -5,9 +5,47 @@ DATABASE_FILE = 'data.txt'
 
 database = {}
 
+def load_database():
+    if not database:
+        if os.path.exists(DATABASE_FILE):
+            with open(DATABASE_FILE, 'r') as f:
+                for line in f:
+                    record = line.strip().split('|')
+                    for i in range(len(record)):
+                        record[i] = record[i].replace(" ","")
+                    if is_valid_record(record, line):
+                        name = record[0].lower()
+                        database[name] = record
+        print("Python DB server is now running...")
+
+def is_valid_record(record, line):
+    if not record[0].isalpha():
+        print(f"Record skipped [invalid name]: {line}")
+        return False
+    if len(record) > 1 and record[1] and record[1]:
+        try:
+            age = int(record[1])
+            if age < 1 or age > 120:
+                print(f"Record skipped [invalid age field]: {line}")
+                return False
+        except ValueError:
+            print(f"Record skipped [invalid age field]: {line}")
+            return False
+    if len(record) > 2 and record[2]:
+        if not all(c.isalnum() or c in " .-" for c in record[2]):
+            print(f"Record skipped [invalid address field]: {line}")
+            return False
+    if len(record) > 3 and record[3]:
+        if not ([i.isnumeric() for i in record[3]].count(True) in [7,10] and record[3][-5] == '-'):
+            print(f"Record skipped [invalid phone field]: {line}")
+            return False
+        if len(record[3]) == 10 and record[3][3] != " ":
+            print(f"Record skipped [invalid phone field]: {line}")
+            return False
+    return True
+
 class DatabaseServerHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        self.load_database()
         while True:
             self.data = self.request.recv(1024).strip().decode('utf-8')
             if not self.data:
@@ -15,45 +53,6 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
             command, *params = self.data.split('|')
             response = self.handle_command(command, params)
             self.request.sendall(response.encode('utf-8'))
-
-    def load_database(self):
-        if not database:
-            if os.path.exists(DATABASE_FILE):
-                with open(DATABASE_FILE, 'r') as f:
-                    for line in f:
-                        record = line.strip().split('|')
-                        if len(record) != 4:
-                            print(f"Record skipped [missing field(s)]: {line}")
-                        elif self.is_valid_record(record, line):
-                            name = record[0].lower()
-                            database[name] = record
-            print("Python DB server is now running...")
-
-    def is_valid_record(self, record, line):
-        if not record[0].isalpha():
-            print(f"Record skipped [invalid name]: {line}")
-            return False
-        if len(record) > 1 and record[1]:
-            try:
-                age = int(record[1])
-                if age < 1 or age > 120:
-                    print(f"Record skipped [invalid age field]: {line}")
-                    return False
-            except ValueError:
-                print(f"Record skipped [invalid age field]: {line}")
-                return False
-        if len(record) > 2 and record[2]:
-            if not all(c.isalnum() or c in " .-" for c in record[2]):
-                print(f"Record skipped [invalid address field]: {line}")
-                return False
-        if len(record) > 3 and record[3]:
-            if not ([i.isnumeric() for i in record[3]].count(True) in [7,10] and record[3][-5] == '-'):
-                print(f"Record skipped [invalid phone field]: {line}")
-                return False
-            if len(record[3]) == 10 and record[3][3] != " ":
-                print(f"Record skipped [invalid phone field]: {line}")
-                return False
-        return True
 
     def handle_command(self, command, params):
         if command == "find":
@@ -87,7 +86,7 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
         name = params[0].lower()
         if name in database:
             return "Customer already exists"
-        if not self.is_valid_record(params, line="|".join(params)):
+        if not is_valid_record(params, line="|".join(params)):
             return "Invalid customer data"
         database[name] = params
         #self.write_to_file()
@@ -103,6 +102,7 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
 
     def update_customer(self, name, field, value):
         name = name.lower()
+        value = int(value)
         print(name, field, value)
         if name not in database:
             return "Customer not found"
@@ -122,6 +122,7 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 9999
+    load_database()
     with socketserver.TCPServer((HOST, PORT), DatabaseServerHandler) as server:
         print("Server started at {}:{}".format(HOST, PORT))
         server.serve_forever()
