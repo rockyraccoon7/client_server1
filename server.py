@@ -11,18 +11,16 @@ def load_database():
             with open(DATABASE_FILE, 'r') as f:
                 for line in f:
                     record = line.strip().split('|')
-                    for i in range(len(record)):
-                        record[i] = record[i].replace(" ","")
                     if is_valid_record(record, line):
-                        name = record[0].lower()
-                        database[name] = record
+                        record[0] = record[0].lower()
+                        database[record[0]] = record
         print("Python DB server is now running...")
 
 def is_valid_record(record, line):
     if not record[0].isalpha():
         print(f"Record skipped [invalid name]: {line}")
         return False
-    if len(record) > 1 and record[1] and record[1]:
+    if len(record) > 1 and record[1] and record[1].replace(" ",""):
         try:
             age = int(record[1])
             if age < 1 or age > 120:
@@ -31,11 +29,11 @@ def is_valid_record(record, line):
         except ValueError:
             print(f"Record skipped [invalid age field]: {line}")
             return False
-    if len(record) > 2 and record[2]:
+    if len(record) > 2 and record[2].replace(" ",""):
         if not all(c.isalnum() or c in " .-" for c in record[2]):
             print(f"Record skipped [invalid address field]: {line}")
             return False
-    if len(record) > 3 and record[3]:
+    if len(record) > 3 and record[3].replace(" ",""):
         if not ([i.isnumeric() for i in record[3]].count(True) in [7,10] and record[3][-5] == '-'):
             print(f"Record skipped [invalid phone field]: {line}")
             return False
@@ -80,7 +78,7 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
 
     def find_customer(self, name):
         name = name.lower()
-        return '|'.join(database.get(name, ["Customer not found"]))
+        return '|'.join(database.get(name, "Customer not found"))
 
     def add_customer(self, params):
         name = params[0].lower()
@@ -102,12 +100,11 @@ class DatabaseServerHandler(socketserver.BaseRequestHandler):
 
     def update_customer(self, name, field, value):
         name = name.lower()
-        value = int(value)
         print(name, field, value)
         if name not in database:
             return "Customer not found"
         index = {'age': 1, 'address': 2, 'phone': 3}[field]
-        if field == "age" and (value <= 1 or value >= 120):
+        if field == "age" and (int(value) <= 1 or int(value) >= 120):
             return "Invalid age. Age should be between 1 and 120. Try again"
         elif field == "phone" and not ([i.isnumeric() for i in value].count(True) in [7,10] and value[-5] == '-'):
             return "Invalid phone number. Try again"
