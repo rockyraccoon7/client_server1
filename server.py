@@ -11,6 +11,8 @@ def load_database():
             with open(DATABASE_FILE, 'r') as f:
                 for line in f:
                     record = line.strip().split('|')
+                    for i in range(len(record)):
+                        record[i] = record[i].strip()
                     if is_valid_record(record, line):
                         record[0] = record[0].lower()
                         database[record[0]] = record
